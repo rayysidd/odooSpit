@@ -1,8 +1,17 @@
 import PropTypes from 'prop-types';
 
-export default function KPICard({ title, value, icon: Icon, trend, trendType = 'up', className = '' }) {
+export default function KPICard({
+  title,
+  value,
+  icon: Icon,
+  trend,
+  trendType = 'up',
+  className = '',
+}) {
   return (
-    <div className={`bg-gray-800 text-white p-4 rounded shadow flex items-center justify-between ${className}`}>
+    <div
+      className={`bg-gray-800 text-white p-4 rounded shadow flex items-center justify-between ${className}`}
+    >
       <div className="flex items-center space-x-4">
         {Icon && <Icon className="h-10 w-10 text-blue-400" aria-hidden="true" />}
         <div>
@@ -11,7 +20,11 @@ export default function KPICard({ title, value, icon: Icon, trend, trendType = '
         </div>
       </div>
       {trend !== undefined && (
-        <div className={`flex items-center text-sm font-semibold ${trendType === 'up' ? 'text-green-400' : 'text-red-400'}`}>
+        <div
+          className={`flex items-center text-sm font-semibold ${
+            trendType === 'up' ? 'text-green-400' : 'text-red-400'
+          }`}
+        >
           {trendType === 'up' ? '▲' : '▼'} {trend}%
         </div>
       )}

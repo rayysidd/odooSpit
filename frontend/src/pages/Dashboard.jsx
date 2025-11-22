@@ -33,11 +33,11 @@ export default function Dashboard() {
     setFilters((prev) =>
       prev.map((f) => (f.name === name ? { ...f, value } : f))
     );
-    // Fetch/filter data according to new filters...
+    // TODO: Fetch/filter data according to new filters...
   };
 
   useEffect(() => {
-    // Fetch dashboard KPIs and chart data (mock or API)
+    // Fetch dashboard KPIs and inventory trend chart data (mock or from API)
     setKpis({
       totalProducts: 320,
       lowStock: 15,
@@ -63,8 +63,18 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <KPICard title="Total Products" value={kpis.totalProducts} />
-        <KPICard title="Low Stock Items" value={kpis.lowStock} trend={-5} trendType="down" />
-        <KPICard title="Pending Receipts" value={kpis.pendingReceipts} trend={10} trendType="up" />
+        <KPICard
+          title="Low Stock Items"
+          value={kpis.lowStock}
+          trend={-5}
+          trendType="down"
+        />
+        <KPICard
+          title="Pending Receipts"
+          value={kpis.pendingReceipts}
+          trend={10}
+          trendType="up"
+        />
       </div>
 
       {chartData && (

@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 
-export default function SignupForm({ onSubmit, loading = false, error }) {
+// Your SignupForm as provided with minor adjustments
+function SignupForm({ onSubmit, loading = false, error }) {
   const [formValues, setFormValues] = useState({
     name: '',
     email: '',
@@ -116,3 +117,41 @@ SignupForm.propTypes = {
   loading: PropTypes.bool,
   error: PropTypes.string,
 };
+
+// Parent component example hooking API signup call and passing onSubmit prop
+export default function SignupContainer() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSignup = async (formData) => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          // optionally send role too if needed
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.message || 'Signup failed');
+      } else {
+        alert('Signup successful! You can now login.');
+        // Optionally redirect or switch UI state here
+      }
+    } catch (err) {
+      setError('Network or server error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return <SignupForm onSubmit={handleSignup} loading={loading} error={error} />;
+}

@@ -2,7 +2,9 @@ import PropTypes from 'prop-types';
 
 export default function DashboardFilter({ filters, onChange, className = '' }) {
   return (
-    <div className={`flex flex-wrap items-center space-x-4 p-4 bg-gray-800 rounded shadow ${className}`}>
+    <div
+      className={`flex flex-wrap items-center space-x-4 p-4 bg-gray-800 rounded shadow ${className}`}
+    >
       {filters.map(({ label, name, type, options, value }) => (
         <div key={name} className="flex flex-col mb-2 min-w-[150px]">
           <label htmlFor={name} className="text-xs text-gray-400 mb-1">

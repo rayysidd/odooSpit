@@ -1,6 +1,10 @@
 import PropTypes from 'prop-types';
 
-export default function WarehouseSwitcher({ warehouses, selectedWarehouse, onChange }) {
+export default function WarehouseSwitcher({
+  warehouses = [],
+  selectedWarehouse,
+  onChange,
+}) {
   return (
     <div className="text-white">
       <label htmlFor="warehouse-select" className="mr-2 font-medium">
@@ -28,7 +32,7 @@ WarehouseSwitcher.propTypes = {
       id: PropTypes.string.isRequired,
       name: PropTypes.string.isRequired,
     })
-  ).isRequired,
+  ),
   selectedWarehouse: PropTypes.string.isRequired,
   onChange: PropTypes.func.isRequired,
 };
