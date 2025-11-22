@@ -1,90 +1,46 @@
 import axios from 'axios';
 
-const receiptUrl = '/api/receipts';
-const deliveryUrl = '/api/deliveries';
-const transferUrl = '/api/transfers';
+const STOCK_API_URL = '/api/stock/operations';
 
-export async function fetchReceipts() {
+const getAuthHeader = () => {
+  const token = localStorage.getItem('authToken');
+  return { headers: { Authorization: `Bearer ${token}` } };
+};
+
+const fetchOperations = async (type) => {
   try {
-    const response = await axios.get(receiptUrl);
+    const response = await axios.get(STOCK_API_URL, {
+      params: { type },
+      ...getAuthHeader()
+    });
     return response.data;
   } catch (error) {
     throw error.response?.data || error;
   }
-}
+};
 
-export async function createReceipt(data) {
+const createOperation = async (payload) => {
   try {
-    const response = await axios.post(receiptUrl, data);
-    return response.data;
+    const response = await axios.post(STOCK_API_URL, payload, getAuthHeader());
+    return response.data.operation;
   } catch (error) {
     throw error.response?.data || error;
   }
-}
+};
 
-export async function deleteReceipt(id) {
-  try {
-    const response = await axios.delete(`${receiptUrl}/${id}`);
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || error;
-  }
-}
+// --- EXPORTS ---
 
-// Same pattern for Deliveries
+export const fetchReceipts = () => fetchOperations('RECEIPT');
+export const createReceipt = (data) => createOperation(data);
 
-export async function fetchDeliveries() {
-  try {
-    const response = await axios.get(deliveryUrl);
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || error;
-  }
-}
+export const fetchDeliveries = () => fetchOperations('DELIVERY');
+export const createDelivery = (data) => createOperation(data);
 
-export async function createDelivery(data) {
-  try {
-    const response = await axios.post(deliveryUrl, data);
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || error;
-  }
-}
+export const fetchTransfers = () => fetchOperations('INTERNAL');
+export const createTransfer = (data) => createOperation(data);
 
-export async function deleteDelivery(id) {
-  try {
-    const response = await axios.delete(`${deliveryUrl}/${id}`);
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || error;
-  }
-}
+export const fetchAdjustments = () => fetchOperations('ADJUSTMENT');
+export const createAdjustment = (data) => createOperation(data);
 
-// Same pattern for Transfers
-
-export async function fetchTransfers() {
-  try {
-    const response = await axios.get(transferUrl);
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || error;
-  }
-}
-
-export async function createTransfer(data) {
-  try {
-    const response = await axios.post(transferUrl, data);
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || error;
-  }
-}
-
-export async function deleteTransfer(id) {
-  try {
-    const response = await axios.delete(`${transferUrl}/${id}`);
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || error;
-  }
-}
+// Backend doesn't typically "delete" ledger entries, but we can stub it
+export const deleteTransaction = async (id) => { console.warn("Delete not implemented on ledger"); };

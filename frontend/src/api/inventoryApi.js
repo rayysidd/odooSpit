@@ -2,10 +2,15 @@ import axios from 'axios';
 
 const API_URL = '/api/products';
 
+const getAuthHeader = () => {
+  const token = localStorage.getItem('authToken');
+  return { headers: { Authorization: `Bearer ${token}` } };
+};
+
 export async function fetchProducts() {
   try {
-    const response = await axios.get(API_URL);
-    return response.data; // Expected: array of product objects
+    const response = await axios.get(API_URL, getAuthHeader());
+    return response.data;
   } catch (error) {
     throw error.response?.data || error;
   }
@@ -13,8 +18,8 @@ export async function fetchProducts() {
 
 export async function createProduct(productData) {
   try {
-    const response = await axios.post(API_URL, productData);
-    return response.data; // Created product object
+    const response = await axios.post(API_URL, productData, getAuthHeader());
+    return response.data;
   } catch (error) {
     throw error.response?.data || error;
   }
@@ -22,8 +27,8 @@ export async function createProduct(productData) {
 
 export async function updateProduct(id, productData) {
   try {
-    const response = await axios.put(`${API_URL}/${id}`, productData);
-    return response.data; // Updated product object
+    const response = await axios.put(`${API_URL}/${id}`, productData, getAuthHeader());
+    return response.data;
   } catch (error) {
     throw error.response?.data || error;
   }
@@ -31,8 +36,8 @@ export async function updateProduct(id, productData) {
 
 export async function deleteProduct(id) {
   try {
-    const response = await axios.delete(`${API_URL}/${id}`);
-    return response.data; // Success message
+    const response = await axios.delete(`${API_URL}/${id}`, getAuthHeader());
+    return response.data;
   } catch (error) {
     throw error.response?.data || error;
   }
