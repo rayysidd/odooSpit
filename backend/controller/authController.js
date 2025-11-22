@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
-export const registerUser = async (req, res) => {  // FIXED: was (res, req)
+export const registerUser = async (req, res) => {
     try {
         const { name, email, password, role } = req.body;
 
@@ -14,7 +14,8 @@ export const registerUser = async (req, res) => {  // FIXED: was (res, req)
 
         // Check if this is the first user - make them admin automatically
         const userCount = await User.countDocuments();
-        const assignedRole = userCount === 0 ? "admin" : (role || "viewer");
+        // NOTE: The role must match the enum in User.js ('admin', 'viewer').
+        const assignedRole = userCount === 0 ? "admin" : (role || "viewer"); 
 
         const user = await User.create({
             name,
@@ -51,6 +52,7 @@ export const loginUser = async (req, res) => {
     if (!isMatch)
       return res.status(400).json({ message: "Invalid password" });
 
+    // The JWT payload includes ID and role for easy access in middleware
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
@@ -74,7 +76,7 @@ export const loginUser = async (req, res) => {
 
 export const logoutUser = async (req, res) => {
   try {
-    // JWT logout = Frontend removes token
+    // Standard JWT logout: client discards the token
     res.json({
       message: "Logout successful. Please remove token on frontend.",
     });
@@ -86,9 +88,10 @@ export const logoutUser = async (req, res) => {
 // New function: Allow admins to promote users to admin
 export const promoteToAdmin = async (req, res) => {
   try {
+    // The userId to be promoted is taken from the URL parameter
     const { userId } = req.params;
     
-    // Check if requester is admin (set by adminMiddleware)
+    // Check if the authenticated user (from authMiddleware) is an admin
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: "Only admins can promote users" });
     }
@@ -98,10 +101,12 @@ export const promoteToAdmin = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // Role check must match the enum in User.js ('admin')
     if (user.role === 'admin') {
       return res.status(400).json({ message: "User is already an admin" });
     }
 
+    // Set the new role
     user.role = 'admin';
     await user.save();
 
@@ -115,6 +120,7 @@ export const promoteToAdmin = async (req, res) => {
       }
     });
   } catch (err) {
+    // Handle mongoose or other errors
     res.status(500).json({ error: err.message });
   }
 };
