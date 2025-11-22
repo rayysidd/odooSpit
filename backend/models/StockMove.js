@@ -1,11 +1,13 @@
-const stockMoveSchema = new Schema({
+import mongoose from "mongoose";
+
+const stockMoveSchema = new mongoose.Schema({
     operation_id: {
-        type: Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'StockOperation', // Connects this line to the header document
         required: true
     },
     product_id: {
-        type: Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'Product', // The specific item moving
         required: true
     },

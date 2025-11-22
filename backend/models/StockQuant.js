@@ -1,11 +1,13 @@
-const stockQuantSchema = new Schema({
+import mongoose from "mongoose";
+
+const stockQuantSchema = new mongoose.Schema({
     product_id: {
-        type: Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'Product',
         required: true
     },
     location_id: {
-        type: Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'Location', 
         required: true
     },

@@ -1,4 +1,6 @@
-const stockOperationSchema = new Schema({
+import mongoose from "mongoose";
+
+const stockOperationSchema = new mongoose.Schema({
     reference: {
         type: String,
         required: true,
@@ -11,12 +13,12 @@ const stockOperationSchema = new Schema({
         required: true
     },
     source_location_id: {
-        type: Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'Location',
         required: true
     },
     dest_location_id: {
-        type: Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'Location',
         required: true
     },
@@ -27,7 +29,7 @@ const stockOperationSchema = new Schema({
         index: true
     },
     created_by: {
-        type: Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
     },

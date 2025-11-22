@@ -3,9 +3,10 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
-//import productRoutes from "./routes/productRoutes.js";
-// import stockRoutes from "./routes/stockRoutes.js";
-
+import productRoutes from "./routes/productRoutes.js";
+import stockRoutes from "./routes/stockRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoute.js";
+import locationRoutes from "./routes/locationRoutes.js"; // Import this
 dotenv.config();
 
 const app = express();
@@ -21,9 +22,13 @@ mongoose
 
 
 app.use("/api/auth", authRoutes);
-// app.use("/api/products", productRoutes);
-// app.use("/api/stock", stockRoutes);
-
+app.use("/api/products", productRoutes);
+app.use("/api/stock", stockRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/stock", stockRoutes);
+app.use("/api/dashboard", dashboardRoutes); // Add this line
+app.use("/api/locations", locationRoutes); // Add this line
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {

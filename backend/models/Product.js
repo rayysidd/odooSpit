@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const productSchema = new Schema({
+const productSchema = new mongoose.Schema({
     sku: {
         type: String,
         required: true,
@@ -27,7 +27,7 @@ const productSchema = new Schema({
         default: 0
     },
     attributes: {
-        type: Schema.Types.Mixed,
+        type: mongoose.Schema.Types.Mixed,
         default: {}
     },
     active: {
