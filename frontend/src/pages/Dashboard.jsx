@@ -37,7 +37,6 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    // Fetch dashboard KPIs and inventory trend chart data (mock or from API)
     setKpis({
       totalProducts: 320,
       lowStock: 15,
@@ -58,37 +57,49 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <main className="p-6 space-y-6">
-      <DashboardFilter filters={filters} onChange={handleFilterChange} />
+    <main className="min-h-screen p-6">
+      <section className="mb-8">
+        <DashboardFilter filters={filters} onChange={handleFilterChange} />
+      </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <KPICard title="Total Products" value={kpis.totalProducts} />
-        <KPICard
-          title="Low Stock Items"
-          value={kpis.lowStock}
-          trend={-5}
-          trendType="down"
-        />
-        <KPICard
-          title="Pending Receipts"
-          value={kpis.pendingReceipts}
-          trend={10}
-          trendType="up"
-        />
-      </div>
+      <section aria-label="Key Performance Indicators" className="mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="rounded-lg shadow p-4">
+            <KPICard title="Total Products" value={kpis.totalProducts} />
+          </div>
+          <div className="rounded-lg shadow p-4">
+            <KPICard
+              title="Low Stock Items"
+              value={kpis.lowStock}
+              trend={-5}
+              trendType="down"
+            />
+          </div>
+          <div className="rounded-lg shadow p-4">
+            <KPICard
+              title="Pending Receipts"
+              value={kpis.pendingReceipts}
+              trend={10}
+              trendType="up"
+            />
+          </div>
+        </div>
+      </section>
 
       {chartData && (
-        <InventoryChart
-          data={chartData}
-          options={{
-            responsive: true,
-            plugins: {
-              legend: { display: true, position: 'bottom' },
-              title: { display: true, text: 'Inventory Trends' },
-            },
-          }}
-          className="mt-6"
-        />
+        <section aria-label="Inventory Trend Chart" className="rounded-lg shadow p-6">
+          <InventoryChart
+            data={chartData}
+            options={{
+              responsive: true,
+              plugins: {
+                legend: { display: true, position: 'bottom' },
+                title: { display: true, text: 'Inventory Trends' },
+              },
+            }}
+            className="mt-4"
+          />
+        </section>
       )}
     </main>
   );

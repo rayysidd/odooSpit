@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function ProfileMenu() {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -13,6 +15,19 @@ export default function ProfileMenu() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleMenuClick = (action) => {
+    setOpen(false);
+    if (action === 'Profile') {
+      navigate('/profile');
+    } else if (action === 'Settings') {
+      // Navigate or show settings page/modal
+      alert('Settings clicked!');
+    } else if (action === 'Logout') {
+      // Perform logout logic
+      alert('Logging out...');
+    }
+  };
 
   return (
     <div className="relative" ref={menuRef}>
@@ -45,17 +60,29 @@ export default function ProfileMenu() {
           aria-label="Profile menu"
         >
           <li>
-            <button className="block w-full px-4 py-2 hover:bg-gray-700" role="menuitem">
+            <button
+              onClick={() => handleMenuClick('Profile')}
+              className="block w-full px-4 py-2 hover:bg-gray-700"
+              role="menuitem"
+            >
               Profile
             </button>
           </li>
           <li>
-            <button className="block w-full px-4 py-2 hover:bg-gray-700" role="menuitem">
+            <button
+              onClick={() => handleMenuClick('Settings')}
+              className="block w-full px-4 py-2 hover:bg-gray-700"
+              role="menuitem"
+            >
               Settings
             </button>
           </li>
           <li>
-            <button className="block w-full px-4 py-2 hover:bg-gray-700" role="menuitem">
+            <button
+              onClick={() => handleMenuClick('Logout')}
+              className="block w-full px-4 py-2 hover:bg-gray-700"
+              role="menuitem"
+            >
               Logout
             </button>
           </li>
