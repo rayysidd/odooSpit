@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import sendEmail from '../utils/sendEmail.js';
 
 export const registerUser = async (req, res) => {
     try {
@@ -121,6 +122,83 @@ export const promoteToAdmin = async (req, res) => {
     });
   } catch (err) {
     // Handle mongoose or other errors
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// @desc    Forgot Password - Send OTP
+// @route   POST /api/auth/forgot-password
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Generate a 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Set OTP and expiry (15 minutes from now)
+    user.resetPasswordOtp = otp;
+    user.resetPasswordExpires = Date.now() + 15 * 60 * 1000; // 15 mins
+
+    await user.save();
+
+    // Send Email
+    const message = `Your Password Reset OTP is: ${otp}\n\nIt is valid for 15 minutes.`;
+
+    try {
+      await sendEmail({
+        email: user.email,
+        subject: 'StockMaster Password Reset OTP',
+        message,
+      });
+
+      res.status(200).json({ message: "OTP sent to email" });
+    } catch (error) {
+      // If email fails, clear the OTP fields
+      user.resetPasswordOtp = undefined;
+      user.resetPasswordExpires = undefined;
+      await user.save();
+      return res.status(500).json({ message: "Email could not be sent" });
+    }
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// @desc    Reset Password - Verify OTP
+// @route   POST /api/auth/reset-password
+export const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    const user = await User.findOne({
+      email,
+      resetPasswordOtp: otp,
+      resetPasswordExpires: { $gt: Date.now() } // Check if not expired
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid OTP or OTP has expired" });
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    user.passwordHash = await bcrypt.hash(newPassword, salt);
+
+    // Clear OTP fields
+    user.resetPasswordOtp = undefined;
+    user.resetPasswordExpires = undefined;
+
+    await user.save();
+
+    res.status(200).json({ message: "Password reset successful. You can now login." });
+
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };

@@ -7,24 +7,30 @@ const userSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-
     email: {
       type: String,
       required: true,
       unique: true,
       lowercase: true,
     },
-
     passwordHash: {
       type: String,
       required: true,
     },
-
     role: {
       type: String,
       enum: ["admin", "viewer"],
       default: "viewer",
     },
+    // --- NEW FIELDS FOR OTP ---
+    resetPasswordOtp: {
+      type: String,
+      required: false
+    },
+    resetPasswordExpires: {
+      type: Date,
+      required: false
+    }
   },
   { timestamps: true }
 );
