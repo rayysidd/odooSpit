@@ -42,163 +42,173 @@ export const registerUser = async (req, res) => {
 };
 
 export const loginUser = async (req, res) => {
-  try {
-    const { email, password } = req.body;
+    try {
+        const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
-    if (!user)
-      return res.status(404).json({ message: "User not found" });
+        // CRITICAL: Use .select('+passwordHash') to ensure Mongoose returns the hash for comparison
+        const user = await User.findOne({ email }).select('+passwordHash');
+        
+        if (!user)
+            // Use 401 for generic "Invalid credentials" (security best practice)
+            return res.status(401).json({ message: "Invalid credentials" });
 
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
-    if (!isMatch)
-      return res.status(400).json({ message: "Invalid password" });
+        // Check if the provided password matches the stored hash
+        const isMatch = await bcrypt.compare(password, user.passwordHash);
+        
+        if (!isMatch)
+            return res.status(401).json({ message: "Invalid credentials" });
 
-    // The JWT payload includes ID and role for easy access in middleware
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+        // --- SUCCESSFUL LOGIN LOGIC ADDED BELOW ---
 
-    res.json({
-      message: "Login successful",
-      token,
-      user: {
-        id: user._id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-      },
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+        // 1. Generate JWT Token
+        // The JWT payload includes ID and role for easy access in middleware
+        const token = jwt.sign(
+            { id: user._id, role: user.role },
+            process.env.JWT_SECRET || 'your_default_secret_key', // Use process.env.JWT_SECRET
+            { expiresIn: "7d" }
+        );
+
+        // 2. Successful Response: Send token and user details to the client
+        res.json({
+            message: "Login successful",
+            token,
+            user: {
+                id: user._id,
+                email: user.email,
+                name: user.name,
+                role: user.role,
+            },
+        });
+    } catch (err) {
+        console.error("Login error:", err.message);
+        res.status(500).json({ error: "Server error during login" });
+    }
 };
 
 export const logoutUser = async (req, res) => {
-  try {
-    // Standard JWT logout: client discards the token
-    res.json({
-      message: "Logout successful. Please remove token on frontend.",
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// New function: Allow admins to promote users to admin
-export const promoteToAdmin = async (req, res) => {
-  try {
-    // The userId to be promoted is taken from the URL parameter
-    const { userId } = req.params;
-    
-    // Check if the authenticated user (from authMiddleware) is an admin
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ message: "Only admins can promote users" });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // Role check must match the enum in User.js ('admin')
-    if (user.role === 'admin') {
-      return res.status(400).json({ message: "User is already an admin" });
-    }
-
-    // Set the new role
-    user.role = 'admin';
-    await user.save();
-
-    res.json({
-      message: "User promoted to admin successfully",
-      user: {
-        id: user._id,
-        email: user.email,
-        name: user.name,
-        role: user.role
-      }
-    });
-  } catch (err) {
-    // Handle mongoose or other errors
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// @desc    Forgot Password - Send OTP
-// @route   POST /api/auth/forgot-password
-export const forgotPassword = async (req, res) => {
-  try {
-    const { email } = req.body;
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // Generate a 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // Set OTP and expiry (15 minutes from now)
-    user.resetPasswordOtp = otp;
-    user.resetPasswordExpires = Date.now() + 15 * 60 * 1000; // 15 mins
-
-    await user.save();
-
-    // Send Email
-    const message = `Your Password Reset OTP is: ${otp}\n\nIt is valid for 15 minutes.`;
-
     try {
-      await sendEmail({
-        email: user.email,
-        subject: 'StockMaster Password Reset OTP',
-        message,
-      });
-
-      res.status(200).json({ message: "OTP sent to email" });
-    } catch (error) {
-      // If email fails, clear the OTP fields
-      user.resetPasswordOtp = undefined;
-      user.resetPasswordExpires = undefined;
-      await user.save();
-      return res.status(500).json({ message: "Email could not be sent" });
+        // Standard JWT logout: client discards the token
+        res.json({
+            message: "Logout successful. Please remove token on frontend.",
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
 };
 
-// @desc    Reset Password - Verify OTP
-// @route   POST /api/auth/reset-password
-export const resetPassword = async (req, res) => {
-  try {
-    const { email, otp, newPassword } = req.body;
+// Renamed from forgotPassword to requestOTP to match authApi.js
+export const requestOTP = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ email });
 
-    const user = await User.findOne({
-      email,
-      resetPasswordOtp: otp,
-      resetPasswordExpires: { $gt: Date.now() } // Check if not expired
-    });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
 
-    if (!user) {
-      return res.status(400).json({ message: "Invalid OTP or OTP has expired" });
+        // Generate a 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Set OTP and expiry (15 minutes from now)
+        user.resetPasswordOtp = otp;
+        user.resetPasswordExpires = Date.now() + 15 * 60 * 1000; // 15 mins
+
+        await user.save();
+
+        // Send Email
+        const message = `Your Password Reset OTP is: ${otp}\n\nIt is valid for 15 minutes.`;
+
+        try {
+            // Note: Ensure your sendEmail utility and email configuration are working
+            await sendEmail({
+                email: user.email,
+                subject: 'StockMaster Password Reset OTP',
+                message,
+            });
+
+            res.status(200).json({ message: "OTP sent to email" });
+        } catch (error) {
+            // If email fails, clear the OTP fields
+            user.resetPasswordOtp = undefined;
+            user.resetPasswordExpires = undefined;
+            await user.save();
+            return res.status(500).json({ message: "Email could not be sent" });
+        }
+
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
+};
 
-    // Hash new password
-    const salt = await bcrypt.genSalt(10);
-    user.passwordHash = await bcrypt.hash(newPassword, salt);
+// Renamed from resetPassword to verifyOTP to match authApi.js
+export const verifyOTP = async (req, res) => {
+    try {
+        // This function handles both OTP verification AND the final password reset
+        const { email, otp, newPassword } = req.body; 
 
-    // Clear OTP fields
-    user.resetPasswordOtp = undefined;
-    user.resetPasswordExpires = undefined;
+        const user = await User.findOne({
+            email,
+            resetPasswordOtp: otp,
+            resetPasswordExpires: { $gt: Date.now() } // Check if not expired
+        });
 
-    await user.save();
+        if (!user) {
+            return res.status(400).json({ message: "Invalid OTP or OTP has expired" });
+        }
 
-    res.status(200).json({ message: "Password reset successful. You can now login." });
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        user.passwordHash = await bcrypt.hash(newPassword, salt);
 
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+        // Clear OTP fields
+        user.resetPasswordOtp = undefined;
+        user.resetPasswordExpires = undefined;
+
+        await user.save();
+
+        res.status(200).json({ message: "Password reset successful. You can now login." });
+
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// Allows admins to promote users to admin
+export const promoteToAdmin = async (req, res) => {
+    try {
+        // The userId to be promoted is taken from the URL parameter
+        const { userId } = req.params;
+        
+        // Check if the authenticated user (from authMiddleware) is an admin
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ message: "Only admins can promote users" });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Role check must match the enum in User.js ('admin')
+        if (user.role === 'admin') {
+            return res.status(400).json({ message: "User is already an admin" });
+        }
+
+        // Set the new role
+        user.role = 'admin';
+        await user.save();
+
+        res.json({
+            message: "User promoted to admin successfully",
+            user: {
+                id: user._id,
+                email: user.email,
+                name: user.name,
+                role: user.role
+            }
+        });
+    } catch (err) {
+        // Handle mongoose or other errors
+        res.status(500).json({ error: err.message });
+    }
 };
