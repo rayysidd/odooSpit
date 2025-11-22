@@ -1,50 +1,49 @@
-import { useState, useEffect } from 'react';
 import TransferForm from '../components/transactions/TransferForm';
 import TransactionList from '../components/transactions/TransactionList';
+import useTransaction from '../hooks/useTransaction';
+import { useInventory } from '../features/inventory/InventoryProvider';
+import Loader from '../components/common/Loader';
 
 export default function Transfers() {
-  const [transfers, setTransfers] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const { transactions, addTransaction, loading, error } = useTransaction('transfer');
+  const { products } = useInventory();
 
-  useEffect(() => {
-    setTransfers([
-      {
-        id: 1,
-        productSKU: 'SKU001',
-        quantity: 10,
-        fromLocation: 'Warehouse A',
-        toLocation: 'Warehouse B',
-        date: '2025-11-18',
-      },
-    ]);
-  }, []);
+  const handleAddTransfer = async (formData) => {
+    const product = products.find(p => p.sku === formData.productSKU);
+    if (!product) {
+      alert("Product SKU not found!");
+      return;
+    }
 
-  const addTransfer = (data) => {
-    setLoading(true);
-    setTimeout(() => {
-      setTransfers((prev) => [...prev, { id: Date.now(), ...data, date: data.transferDate }]);
-      setLoading(false);
-    }, 1000);
+    // Note: For transfers, you likely want real Location IDs from a dropdown
+    // For now, we use hardcoded IDs for demo purposes
+    const payload = {
+      reference: `INT-${Date.now()}`,
+      type: 'INTERNAL',
+      source_location_id: '692169009983a0c5602ebb2f', // Warehouse A
+      dest_location_id: '692169009983a0c5602ebb2f',   // Warehouse B (Demo: Same ID used as placeholder)
+      items: [{ product_id: product._id, quantity: Number(formData.quantity) }]
+    };
+
+    await addTransaction(payload);
   };
 
-  const deleteTransfer = (id) => {
-    setTransfers((prev) => prev.filter((t) => t.id !== id));
-  };
-
-  const editTransfer = (id) => {
-    // Implement if needed
-  };
+  const mappedTransactions = transactions.map(t => ({
+    id: t._id,
+    date: new Date(t.createdAt).toLocaleDateString(),
+    productSKU: t.items?.[0]?.product_id,
+    quantity: t.items?.[0]?.quantity,
+    fromLocation: 'Warehouse A',
+    toLocation: 'Warehouse B'
+  }));
 
   return (
     <main className="p-6 space-y-8">
-      <TransferForm onSubmit={addTransfer} loading={loading} />
-
-      <TransactionList
-        transactions={transfers}
-        type="transfer"
-        onDelete={deleteTransfer}
-        onEdit={editTransfer}
-      />
+      {error && <div className="text-red-500">{error}</div>}
+      <TransferForm onSubmit={handleAddTransfer} loading={loading} />
+      {loading && transactions.length === 0 ? <Loader /> : (
+        <TransactionList transactions={mappedTransactions} type="transfer" onDelete={() => {}} onEdit={() => {}} />
+      )}
     </main>
   );
 }

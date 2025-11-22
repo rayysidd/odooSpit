@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import * as transactionApi from '../api/transactionApi';
 
 export default function useTransaction(type) {
@@ -7,42 +7,30 @@ export default function useTransaction(type) {
   const [error, setError] = useState(null);
 
   const apiMap = {
-    receipt: {
-      fetch: transactionApi.fetchReceipts,
-      create: transactionApi.createReceipt,
-      delete: transactionApi.deleteReceipt,
-    },
-    delivery: {
-      fetch: transactionApi.fetchDeliveries,
-      create: transactionApi.createDelivery,
-      delete: transactionApi.deleteDelivery,
-    },
-    transfer: {
-      fetch: transactionApi.fetchTransfers,
-      create: transactionApi.createTransfer,
-      delete: transactionApi.deleteTransfer,
-    },
+    receipt: { fetch: transactionApi.fetchReceipts, create: transactionApi.createReceipt },
+    delivery: { fetch: transactionApi.fetchDeliveries, create: transactionApi.createDelivery },
+    transfer: { fetch: transactionApi.fetchTransfers, create: transactionApi.createTransfer },
+    adjustment: { fetch: transactionApi.fetchAdjustments, create: transactionApi.createAdjustment },
   };
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
       const data = await apiMap[type].fetch();
-      setTransactions(data);
+      // Map backend _id to frontend id for list components
+      setTransactions(data.map(t => ({ ...t, id: t._id })));
     } catch (err) {
       setError(err.message || 'Failed to fetch transactions');
     } finally {
       setLoading(false);
     }
-  };
+  }, [type]);
 
-  const addTransaction = async (transactionData) => {
+  const addTransaction = async (data) => {
     setLoading(true);
-    setError(null);
     try {
-      const newTransaction = await apiMap[type].create(transactionData);
-      setTransactions((prev) => [...prev, newTransaction]);
+      const newTx = await apiMap[type].create(data);
+      setTransactions((prev) => [{ ...newTx, id: newTx._id }, ...prev]);
     } catch (err) {
       setError(err.message || 'Failed to add transaction');
       throw err;
@@ -51,30 +39,9 @@ export default function useTransaction(type) {
     }
   };
 
-  const deleteTransaction = async (id) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await apiMap[type].delete(id);
-      setTransactions((prev) => prev.filter((t) => t.id !== id));
-    } catch (err) {
-      setError(err.message || 'Failed to delete transaction');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     fetchTransactions();
-  }, [type]);
+  }, [fetchTransactions]);
 
-  return {
-    transactions,
-    loading,
-    error,
-    fetchTransactions,
-    addTransaction,
-    deleteTransaction,
-  };
+  return { transactions, loading, error, addTransaction, fetchTransactions };
 }

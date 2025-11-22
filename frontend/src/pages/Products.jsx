@@ -1,54 +1,59 @@
-// odoo\odooSpit\frontend\src\pages\Products.jsx
-
 import { useState, useEffect } from 'react';
 import ProductForm from '../components/inventory/ProductForm';
 import ProductList from '../components/inventory/ProductList';
+import { useInventory } from '../features/inventory/InventoryProvider';
+import Loader from '../components/common/Loader';
 
 export default function Products() {
-  const [products, setProducts] = useState([]);
-  const [editingProduct, setEditingProduct] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const { products, fetchProducts, addProduct, updateProduct, deleteProduct, loading, error } = useInventory();
+  const [editingProduct, setEditingProduct] = useState(null);
 
-  useEffect(() => {
-    // Load products from API
-    setProducts([
-      { id: 1, name: 'Product A', sku: 'SKU001', category: 'Cat1', unit: 'pcs', reorderLevel: 50 },
-      { id: 2, name: 'Product B', sku: 'SKU002', category: 'Cat2', unit: 'kg', reorderLevel: 20 },
-    ]);
-  }, []);
+  // Products are fetched automatically by the Provider on mount
 
-  const handleSaveProduct = (productData) => {
-    setLoading(true);
-    // Save via API (create or update)
-    setTimeout(() => {
-      if (editingProduct) {
-        setProducts((prev) =>
-          prev.map((p) => (p.id === editingProduct.id ? { ...p, ...productData } : p))
-        );
-      } else {
-        setProducts((prev) => [
-          ...prev,
-          { id: Date.now(), ...productData },
-        ]);
-      }
-      setEditingProduct(null);
-      setLoading(false);
-    }, 1000);
-  };
+  const handleSaveProduct = async (productData) => {
+    try {
+      if (editingProduct) {
+        await updateProduct(editingProduct._id, productData);
+      } else {
+        await addProduct(productData);
+      }
+      setEditingProduct(null);
+    } catch (err) {
+      console.error("Save failed", err);
+    }
+  };
 
-  const handleEdit = (id) => {
-    const product = products.find((p) => p.id === id);
-    setEditingProduct(product);
-  };
+  const handleEdit = (id) => {
+    const product = products.find((p) => p._id === id || p.id === id);
+    setEditingProduct(product);
+  };
 
-  const handleDelete = (id) => {
-    setProducts((prev) => prev.filter((p) => p.id !== id));
-  };
+  const handleDelete = async (id) => {
+    if (window.confirm("Delete this product?")) {
+      await deleteProduct(id);
+    }
+  };
 
-  return (
-    <main className="p-6 space-y-8 **bg-gray-900 min-h-screen**"> 
-      <ProductForm onSubmit={handleSaveProduct} product={editingProduct} loading={loading} onCancel={() => setEditingProduct(null)}/>
-      <ProductList products={products} onEdit={handleEdit} onDelete={handleDelete} />
-    </main>
-  );
+  // Map backend _id to id for the list component
+  const mappedProducts = products.map(p => ({ ...p, id: p._id }));
+
+  if (loading && products.length === 0) return <Loader />;
+
+  return (
+    <main className="p-6 space-y-8">
+      {error && <div className="bg-red-500 text-white p-3 rounded">{error}</div>}
+      
+      <ProductForm 
+        onSubmit={handleSaveProduct} 
+        product={editingProduct} 
+        loading={loading} 
+      />
+
+      <ProductList 
+        products={mappedProducts} 
+        onEdit={handleEdit} 
+        onDelete={handleDelete} 
+      />
+    </main>
+  );
 }
